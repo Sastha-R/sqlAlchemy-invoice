@@ -1,7 +1,5 @@
-from decimal import Decimal, ROUND_HALF_UP
-
+from decimal import Decimal
 from sqlalchemy.orm import Session
-
 from exceptions.custom_exceptions import InvoiceAlreadyExistsError, InvoiceNotFoundError
 from repository.repository import InvoiceRepository
 from schemas.schemas import InvoiceCreate, InvoiceData, InvoicePatch
@@ -16,7 +14,7 @@ class InvoiceService:
         if existing_invoice:
             raise InvoiceAlreadyExistsError("Invoice number already exists")
 
-        invoice_data = self._build_invoice_data(invoice)
+        invoice_data = self.build_invoice_data(invoice)
         return self.repository.create(db, invoice_data)
 
     def get_invoices(self, db: Session, limit: int, offset: int):
@@ -30,9 +28,9 @@ class InvoiceService:
 
     def update_invoice(self, db: Session, invoice_id: int, invoice: InvoiceCreate):
         existing_invoice = self.get_invoice_by_id(db, invoice_id)
-        self._check_invoice_number_available(db, invoice.invoice_number, invoice_id)
+        self.check_invoice_number_available(db, invoice.invoice_number, invoice_id)
 
-        invoice_data = self._build_invoice_data(invoice)
+        invoice_data = self.build_invoice_data(invoice)
         return self.repository.update(db, existing_invoice, invoice_data)
 
     def patch_invoice(self, db: Session, invoice_id: int, invoice: InvoicePatch):
@@ -48,38 +46,38 @@ class InvoiceService:
         }
         updated_data.update(invoice.model_dump(exclude_unset=True))
 
-        self._check_invoice_number_available(db, updated_data["invoice_number"], invoice_id)
+        self.check_invoice_number_available(db, updated_data["invoice_number"], invoice_id)
 
         invoice_create = InvoiceCreate(**updated_data)
-        invoice_data = self._build_invoice_data(invoice_create)
+        invoice_data = self.build_invoice_data(invoice_create)
         return self.repository.update(db, existing_invoice, invoice_data)
 
     def delete_invoice(self, db: Session, invoice_id: int) -> None:
         invoice = self.get_invoice_by_id(db, invoice_id)
         self.repository.delete(db, invoice)
 
-    def _check_invoice_number_available(
+    def check_invoice_number_available(
         self, db: Session, invoice_number: str, current_invoice_id: int
     ) -> None:
         invoice = self.repository.get_by_invoice_number(db, invoice_number)
         if invoice and invoice.id != current_invoice_id:
             raise InvoiceAlreadyExistsError("Invoice number already exists")
 
-    def _build_invoice_data(self, invoice: InvoiceCreate) -> InvoiceData:
-        subtotal = self._money(invoice.quantity * invoice.unit_price)
+    def build_invoice_data(self, invoice: InvoiceCreate) -> InvoiceData:
+        subtotal = invoice.quantity * invoice.unit_price
 
-        if subtotal < Decimal("10000"):
-            discount_percentage = Decimal("5.00")
-        elif subtotal <= Decimal("50000"):
-            discount_percentage = Decimal("10.00")
+        if subtotal < 10000:
+            discount_percentage = 5
+        elif subtotal <= 50000:
+            discount_percentage =10
         else:
-            discount_percentage = Decimal("15.00")
+            discount_percentage =15
 
-        discount_amount = self._money(subtotal * discount_percentage / Decimal("100"))
-        taxable_amount = self._money(subtotal - discount_amount)
-        tax_percentage = Decimal("18.00")
-        tax_amount = self._money(taxable_amount * tax_percentage / Decimal("100"))
-        total_amount = self._money(taxable_amount + tax_amount)
+        discount_amount = subtotal * discount_percentage / 100
+        taxable_amount = subtotal - discount_amount
+        tax_percentage = 18
+        tax_amount = taxable_amount * tax_percentage / 100
+        total_amount = taxable_amount + tax_amount
 
         return InvoiceData(
             invoice_number=invoice.invoice_number,
@@ -88,7 +86,7 @@ class InvoiceService:
             invoice_date=invoice.invoice_date,
             product_name=invoice.product_name,
             quantity=invoice.quantity,
-            unit_price=self._money(invoice.unit_price),
+            unit_price=invoice.unit_price,
             discount_percentage=discount_percentage,
             discount_amount=discount_amount,
             tax_percentage=tax_percentage,
@@ -98,5 +96,4 @@ class InvoiceService:
             total_amount=total_amount,
         )
 
-    def _money(self, value: Decimal) -> Decimal:
-        return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    

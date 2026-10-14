@@ -1,12 +1,8 @@
-from collections.abc import Generator
-
 from sqlalchemy import create_engine, inspect
-from sqlalchemy.orm import Session, sessionmaker
-
+from sqlalchemy.orm import  sessionmaker
 from config import settings
-from database.base import Base
 
-engine = create_engine(settings.database_url, pool_pre_ping=True)
+engine = create_engine(settings.database_url)
 
 SessionLocal = sessionmaker(
     bind=engine,
@@ -15,7 +11,7 @@ SessionLocal = sessionmaker(
 )
 
 
-def get_db() -> Generator[Session, None, None]:
+def get_db():
     db = SessionLocal()
     try:
         yield db
@@ -23,9 +19,4 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-def init_db() -> None:
-    from models.models import Invoice
 
-    inspector = inspect(engine)
-    if not inspector.has_table(Invoice.__tablename__):
-        Base.metadata.create_all(bind=engine)
