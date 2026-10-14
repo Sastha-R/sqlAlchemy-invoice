@@ -1,0 +1,8 @@
+email-validator
+fastapi
+psycopg
+pydantic
+pydantic-settings
+python-dotenv
+SQLAlchemy
+uvicorn
