@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env")
 
     db_host: str
     db_name: str
@@ -10,12 +10,8 @@ class Settings(BaseSettings):
     db_password: str
     db_port: int = 5432
 
-    @property
     def database_url(self) -> str:
-        return (
-            f"postgresql+psycopg://{self.db_user}:{self.db_password}"
-            f"@{self.db_host}:{self.db_port}/{self.db_name}"
-        )
+        return (f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}")
 
 
 settings = Settings()

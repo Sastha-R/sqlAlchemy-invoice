@@ -6,3 +6,5 @@ pydantic-settings
 python-dotenv
 SQLAlchemy
 uvicorn
+asyncpg
+sqlalchemy[asyncio]

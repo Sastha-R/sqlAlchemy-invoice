@@ -1,50 +1,54 @@
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
-
+from sqlalchemy.ext.asyncio import AsyncSession
 from models.models import Invoice
 from schemas.schemas import InvoiceData
 
 
 class InvoiceRepository:
-    def create(self, db: Session, invoice_data: InvoiceData) -> Invoice:
+    async def create(self, db: AsyncSession, invoice_data: InvoiceData):
         invoice = Invoice(**invoice_data.model_dump())
-        try:
+        try:    
             db.add(invoice)
-            db.commit()
-            db.refresh(invoice)
+            await db.commit()
+            await db.refresh(invoice)
             return invoice
+        
         except SQLAlchemyError:
-            db.rollback()
+            await db.rollback()
             raise
 
-    def get_all(self, db: Session, limit: int, offset: int) -> list[Invoice]:
+    async def get_all(self, db: AsyncSession, limit: int, offset: int):
         statement = select(Invoice).order_by(Invoice.id).limit(limit).offset(offset)
-        return list(db.execute(statement).scalars().all())
+        result = await db.execute(statement)
+        return list(result.scalars().all())
 
-    def get_by_id(self, db: Session, invoice_id: int) -> Invoice | None:
-        return db.get(Invoice, invoice_id)
+    async def get_by_id(self, db: AsyncSession, invoice_id: int):
+        return await db.get(Invoice, invoice_id)
 
-    def get_by_invoice_number(self, db: Session, invoice_number: str) -> Invoice | None:
+    async def get_by_invoice_number(self, db: AsyncSession, invoice_number: str):
         statement = select(Invoice).where(Invoice.invoice_number == invoice_number)
-        return db.execute(statement).scalar_one_or_none()
+        result = await db.execute(statement)
+        return result.scalar_one_or_none()
 
-    def update(self, db: Session, invoice: Invoice, invoice_data: InvoiceData) -> Invoice:
+    async def update(self, db: AsyncSession, invoice: Invoice, invoice_data: InvoiceData):
         for field, value in invoice_data.model_dump().items():
             setattr(invoice, field, value)
 
         try:
-            db.commit()
-            db.refresh(invoice)
+            await db.commit()
+            await db.refresh(invoice)
             return invoice
+
+        
         except SQLAlchemyError:
-            db.rollback()
+            await db.rollback()
             raise
 
-    def delete(self, db: Session, invoice: Invoice) -> None:
+    async def delete(self, db: AsyncSession, invoice: Invoice):
         try:
-            db.delete(invoice)
-            db.commit()
+            await db.delete(invoice)
+            await db.commit()
         except SQLAlchemyError:
-            db.rollback()
+            await db.rollback()
             raise

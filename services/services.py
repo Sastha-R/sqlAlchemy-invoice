@@ -1,5 +1,5 @@
 from decimal import Decimal
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from exceptions.custom_exceptions import InvoiceAlreadyExistsError, InvoiceNotFoundError
 from repository.repository import InvoiceRepository
 from schemas.schemas import InvoiceCreate, InvoiceData, InvoicePatch
@@ -9,32 +9,34 @@ class InvoiceService:
     def __init__(self) -> None:
         self.repository = InvoiceRepository()
 
-    def create_invoice(self, db: Session, invoice: InvoiceCreate):
-        existing_invoice = self.repository.get_by_invoice_number(db, invoice.invoice_number)
+    async def create_invoice(self, db: AsyncSession, invoice: InvoiceCreate):
+        existing_invoice = await self.repository.get_by_invoice_number(db, invoice.invoice_number)
         if existing_invoice:
             raise InvoiceAlreadyExistsError("Invoice number already exists")
 
         invoice_data = self.build_invoice_data(invoice)
-        return self.repository.create(db, invoice_data)
+        return await self.repository.create(db, invoice_data)
 
-    def get_invoices(self, db: Session, limit: int, offset: int):
-        return self.repository.get_all(db, limit, offset)
+    async def get_invoices(self, db: AsyncSession, limit: int, offset: int):
+        return await self.repository.get_all(db, limit, offset)
 
-    def get_invoice_by_id(self, db: Session, invoice_id: int):
-        invoice = self.repository.get_by_id(db, invoice_id)
+    async def get_invoice_by_id(self, db: AsyncSession, invoice_id: int):
+        invoice = await self.repository.get_by_id(db, invoice_id)
         if invoice is None:
             raise InvoiceNotFoundError("Invoice not found")
         return invoice
 
-    def update_invoice(self, db: Session, invoice_id: int, invoice: InvoiceCreate):
-        existing_invoice = self.get_invoice_by_id(db, invoice_id)
-        self.check_invoice_number_available(db, invoice.invoice_number, invoice_id)
+    async def update_invoice(self, db: AsyncSession, invoice_id: int, invoice: InvoiceCreate):
 
-        invoice_data = self.build_invoice_data(invoice)
-        return self.repository.update(db, existing_invoice, invoice_data)
+        existing_invoice = await self.get_invoice_by_id(db, invoice_id)
+        await self.check_invoice_number_available(db, invoice.invoice_number, invoice_id)
+        invoice_data =  self.build_invoice_data(invoice)
+        return await self.repository.update(db, existing_invoice, invoice_data)
 
-    def patch_invoice(self, db: Session, invoice_id: int, invoice: InvoicePatch):
-        existing_invoice = self.get_invoice_by_id(db, invoice_id)
+
+
+    async def patch_invoice(self, db: AsyncSession, invoice_id: int, invoice: InvoicePatch):
+        existing_invoice = await self.get_invoice_by_id(db, invoice_id)   
         updated_data = {
             "invoice_number": existing_invoice.invoice_number,
             "customer_name": existing_invoice.customer_name,
@@ -46,24 +48,22 @@ class InvoiceService:
         }
         updated_data.update(invoice.model_dump(exclude_unset=True))
 
-        self.check_invoice_number_available(db, updated_data["invoice_number"], invoice_id)
+        await self.check_invoice_number_available(db, updated_data["invoice_number"], invoice_id)
 
         invoice_create = InvoiceCreate(**updated_data)
-        invoice_data = self.build_invoice_data(invoice_create)
-        return self.repository.update(db, existing_invoice, invoice_data)
+        invoice_data =  self.build_invoice_data(invoice_create)
+        return await self.repository.update(db, existing_invoice, invoice_data)
 
-    def delete_invoice(self, db: Session, invoice_id: int) -> None:
-        invoice = self.get_invoice_by_id(db, invoice_id)
-        self.repository.delete(db, invoice)
+    async def delete_invoice(self, db: AsyncSession, invoice_id: int):
+        invoice = await self.get_invoice_by_id(db, invoice_id)
+        await self.repository.delete(db, invoice)
 
-    def check_invoice_number_available(
-        self, db: Session, invoice_number: str, current_invoice_id: int
-    ) -> None:
-        invoice = self.repository.get_by_invoice_number(db, invoice_number)
+    async def check_invoice_number_available(self, db: AsyncSession, invoice_number: str, current_invoice_id: int):
+        invoice = await self.repository.get_by_invoice_number(db, invoice_number)
         if invoice and invoice.id != current_invoice_id:
             raise InvoiceAlreadyExistsError("Invoice number already exists")
 
-    def build_invoice_data(self, invoice: InvoiceCreate) -> InvoiceData:
+    def build_invoice_data(self, invoice: InvoiceCreate):
         subtotal = invoice.quantity * invoice.unit_price
 
         if subtotal < 10000:
