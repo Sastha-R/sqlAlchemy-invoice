@@ -1,11 +1,12 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-
 from exceptions.custom_exceptions import InvoiceAlreadyExistsError, InvoiceNotFoundError
 from routes.route import invoice_router
+from routes.cookies import cookie_router
 
 app = FastAPI(title="Invoice Management CRUD API")
 app.include_router(invoice_router)
+app.include_router(cookie_router)
 
 
 
