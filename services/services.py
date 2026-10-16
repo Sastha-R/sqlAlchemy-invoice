@@ -3,11 +3,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from exceptions.custom_exceptions import InvoiceAlreadyExistsError, InvoiceNotFoundError
 from repository.repository import InvoiceRepository
 from schemas.schemas import InvoiceCreate, InvoiceData, InvoicePatch
+from utilities.file_handler import (FileHandler,DELIVERY_PROOF_FOLDER)
+
+
 
 
 class InvoiceService:
     def __init__(self) -> None:
         self.repository = InvoiceRepository()
+        self.filehandler = FileHandler()
 
     async def create_invoice(self, db: AsyncSession, invoice: InvoiceCreate):
         existing_invoice = await self.repository.get_by_invoice_number(db, invoice.invoice_number)
@@ -96,4 +100,20 @@ class InvoiceService:
             total_amount=total_amount,
         )
 
-    
+    async def upload_delivery_proof(self,db: AsyncSession,invoice_id: int,photo):
+
+        existing_invoice = await self.repository.get_by_id(db, invoice_id)
+        if not existing_invoice:
+            raise InvoiceNotFoundError("Invoice not found")
+
+        extensions = [".pdf"]
+
+        file_name, file_path = await self.filehandler.save_file(photo,DELIVERY_PROOF_FOLDER,extensions)
+
+        await self.repository.save_file_record(db=db,invoice_id=invoice_id,file_name=file_name,file_type="delivery_proof",file_path=file_path)
+        return {
+            "message": "Delivery-proof file saved successfully",
+            "invoice_id": invoice_id,
+            "photo": file_name
+        }
+        

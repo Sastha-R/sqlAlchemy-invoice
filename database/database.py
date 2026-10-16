@@ -8,10 +8,8 @@ SessionLocal = async_sessionmaker( bind=engine , autoflush=False )
 
 async def get_db():
     async with SessionLocal() as db:
-        try:
             yield db
-        finally:
-            db.close()
+        
 
 
 

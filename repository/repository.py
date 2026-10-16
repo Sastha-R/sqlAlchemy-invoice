@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from models.models import Invoice
+from models.models import Invoice,InvoiceFile
 from schemas.schemas import InvoiceData
 from sqlalchemy import text
 
@@ -77,4 +77,20 @@ class InvoiceRepository:
             await db.rollback()
             raise
 
-    
+    async def save_file_record(self,db: AsyncSession,invoice_id: int,file_name: str,file_type: str,file_path: str):
+        invoice_file = InvoiceFile(
+            invoice_id=invoice_id,
+            file_name=file_name,
+            file_type=file_type,
+            file_path=file_path
+        )
+
+        try:
+            db.add(invoice_file)
+            await db.commit()
+            await db.refresh(invoice_file)
+            return invoice_file
+
+        except SQLAlchemyError:
+            await db.rollback()
+            raise

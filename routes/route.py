@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status,UploadFile,File
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.database import get_db
 from schemas.schemas import InvoiceCreate, InvoicePatch
@@ -36,3 +36,8 @@ async def patch_invoice(invoice_id: int,invoice: InvoicePatch,db: AsyncSession =
 @invoice_router.delete("/{invoice_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_invoice(invoice_id: int, db: AsyncSession = Depends(get_db)):
     await invoice_service.delete_invoice(db, invoice_id)
+
+
+@invoice_router.post("/{invoice_id}/warranty-document")
+async def upload_delivery_proof(invoice_id: int,photo: UploadFile = File(...),db: AsyncSession = Depends(get_db)):
+    return await invoice_service.upload_delivery_proof(db,invoice_id,photo)
