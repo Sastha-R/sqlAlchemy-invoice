@@ -8,3 +8,5 @@ SQLAlchemy
 uvicorn
 asyncpg
 sqlalchemy[asyncio]
+python-multipart
+aiofiles 
