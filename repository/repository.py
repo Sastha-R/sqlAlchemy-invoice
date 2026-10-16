@@ -12,7 +12,7 @@ class InvoiceRepository:
         invoice = invoice_data.model_dump()
         try:
             statement = text("""call create_invoice(
-                           :invoice_number,
+                            :invoice_number,
                             :customer_name,
                             :customer_email,
                             :invoice_date,
@@ -29,8 +29,9 @@ class InvoiceRepository:
             result = await db.execute(statement , invoice)
             await db.commit()
             return invoice
-        finally:
-            pass
+        except SQLAlchemyError:
+            await db.rollback()
+            raise
         # try:    
         #     db.add(invoice)
         #     await db.commit()
