@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select,func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.models import Invoice,InvoiceFile
@@ -96,3 +96,18 @@ class InvoiceRepository:
         except SQLAlchemyError:
             await db.rollback()
             raise
+
+    
+    async def customer_summary(self,total : int , db: AsyncSession):
+
+        statement = (select(Invoice.customer_name,
+                            func.sum(Invoice.total_amount).label("Total Amount"),
+                            func.count().label("No Of Invoices"),
+                            func.count(InvoiceFile.id).label("No Of Invoice Files"))
+                            .outerjoin(InvoiceFile, Invoice.id == InvoiceFile.invoice_id)
+                            .group_by(Invoice.customer_name).having(func.sum(Invoice.total_amount) > total)
+                            .order_by(func.sum(Invoice.total_amount)))     
+
+        result = await db.execute(statement)
+        result = result.mappings().all()            
+        return result

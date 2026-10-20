@@ -117,5 +117,5 @@ class InvoiceService:
             "photo": file_name
         }
 
-
-        
+    async def get_customer_summary(self, total : float , db: AsyncSession):
+        return await self.repository.customer_summary(total , db)
