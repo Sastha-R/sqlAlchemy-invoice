@@ -39,5 +39,5 @@ async def delete_invoice(invoice_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @invoice_router.post("/{invoice_id}/warranty-document")
-async def upload_delivery_proof(invoice_id: int,photo: UploadFile = File(...),db: AsyncSession = Depends(get_db)):
-    return await invoice_service.upload_delivery_proof(db,invoice_id,photo)
+async def upload_warranty_proof(invoice_id: int,photo: UploadFile = File(...),db: AsyncSession = Depends(get_db)):
+    return await invoice_service.upload_warranty_proof(db,invoice_id,photo)

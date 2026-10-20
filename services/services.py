@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from exceptions.custom_exceptions import InvoiceAlreadyExistsError, InvoiceNotFoundError
 from repository.repository import InvoiceRepository
 from schemas.schemas import InvoiceCreate, InvoiceData, InvoicePatch
-from utilities.file_handler import (FileHandler,DELIVERY_PROOF_FOLDER)
+from utilities.file_handler import (FileHandler,WARRANTY_FOLDER)
 
 
 
@@ -100,7 +100,7 @@ class InvoiceService:
             total_amount=total_amount,
         )
 
-    async def upload_delivery_proof(self,db: AsyncSession,invoice_id: int,photo):
+    async def upload_warranty_proof(self,db: AsyncSession,invoice_id: int,photo):
 
         existing_invoice = await self.repository.get_by_id(db, invoice_id)
         if not existing_invoice:
@@ -108,12 +108,14 @@ class InvoiceService:
 
         extensions = [".pdf"]
 
-        file_name, file_path = await self.filehandler.save_file(photo,DELIVERY_PROOF_FOLDER,extensions)
+        file_name, file_path = await self.filehandler.save_file(photo,WARRANTY_FOLDER,extensions)
 
-        await self.repository.save_file_record(db=db,invoice_id=invoice_id,file_name=file_name,file_type="delivery_proof",file_path=file_path)
+        await self.repository.save_file_record(db=db,invoice_id=invoice_id,file_name=file_name,file_type="warranty_document",file_path=file_path)
         return {
-            "message": "Delivery-proof file saved successfully",
+            "message": "Warranty file saved successfully",
             "invoice_id": invoice_id,
             "photo": file_name
         }
+
+
         
