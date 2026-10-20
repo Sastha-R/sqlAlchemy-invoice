@@ -10,7 +10,7 @@ class FileHandler:
     async def save_file(self , photo ,folder ,extensions):
         extension = Path(photo.filename).suffix.lower()
         if extension not in extensions:
-            raise ValueError("Only JPG and PNG photos are allowed")
+            raise ValueError("Only PDF documents are allowed")
 
         file_name = f"{uuid4().hex}{extension}"
         file_path = Path(folder, file_name) 

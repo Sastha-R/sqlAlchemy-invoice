@@ -5,6 +5,8 @@ from models.models import Invoice,InvoiceFile
 from schemas.schemas import InvoiceData
 from sqlalchemy import text
 from sqlalchemy.orm import selectinload
+from datetime import date
+
 
 
 class InvoiceRepository:
@@ -81,10 +83,11 @@ class InvoiceRepository:
 
     async def save_file_record(self,db: AsyncSession,invoice_id: int,file_name: str,file_type: str,file_path: str):
         invoice_file = InvoiceFile(
-            invoice_id=invoice_id,
-            file_name=file_name,
-            file_type=file_type,
-            file_path=file_path
+            invoice_id = invoice_id,
+            file_name = file_name,
+            file_type = file_type,
+            file_path = file_path,
+            uploaded_date = date.today()
         )
 
         try:
@@ -105,7 +108,8 @@ class InvoiceRepository:
                             func.count().label("No Of Invoices"),
                             func.count(InvoiceFile.id).label("No Of Invoice Files"))
                             .outerjoin(InvoiceFile, Invoice.id == InvoiceFile.invoice_id)
-                            .group_by(Invoice.customer_name).having(func.sum(Invoice.total_amount) > total)
+                            .group_by(Invoice.customer_name)
+                            .having(func.sum(Invoice.total_amount) > total)
                             .order_by(func.sum(Invoice.total_amount)))     
 
         result = await db.execute(statement)

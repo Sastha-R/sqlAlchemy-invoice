@@ -10,3 +10,5 @@ asyncpg
 sqlalchemy[asyncio]
 python-multipart
 aiofiles 
+alembic
+

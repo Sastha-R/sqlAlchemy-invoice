@@ -35,8 +35,9 @@ class InvoiceFile(Base):
     __tablename__ = "invoice_files"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    invoice_id: Mapped[int] = mapped_column(ForeignKey("invoices.id", ondelete="CASCADE"),nullable=False)
-    file_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    file_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    file_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    invoice_id : Mapped[int] = mapped_column(ForeignKey("invoices.id", ondelete="CASCADE"),nullable=False)
+    file_name : Mapped[str] = mapped_column(String(255), nullable=False)
+    file_type : Mapped[str] = mapped_column(String(50), nullable=False)
+    file_path : Mapped[str] = mapped_column(String(500), nullable=False)
+    uploaded_date : Mapped[date] =  mapped_column(Date, nullable=False)  #need to apply alembic migration
     invoice: Mapped["Invoice"] = relationship(back_populates="files")
