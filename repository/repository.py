@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.models import Invoice,InvoiceFile
 from schemas.schemas import InvoiceData
 from sqlalchemy import text
+from sqlalchemy.orm import selectinload
 
 
 class InvoiceRepository:
@@ -43,7 +44,8 @@ class InvoiceRepository:
         #     raise
 
     async def get_all(self, db: AsyncSession, limit: int, offset: int):
-        statement = select(Invoice).order_by(Invoice.id).limit(limit).offset(offset)
+        # statement = select(Invoice).order_by(Invoice.id).limit(limit).offset(offset)
+        statement = select(Invoice).options(selectinload(Invoice.files)).order_by(Invoice.id).limit(limit).offset(offset)
         result = await db.execute(statement)
         return list(result.scalars().all())
 
