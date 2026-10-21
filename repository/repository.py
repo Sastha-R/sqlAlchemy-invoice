@@ -34,7 +34,7 @@ class InvoiceRepository:
             return invoice
         except SQLAlchemyError:
             await db.rollback()
-            raise
+            raise   
         # try:    
         #     db.add(invoice)
         #     await db.commit()
