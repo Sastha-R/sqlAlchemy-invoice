@@ -6,10 +6,10 @@ from schemas.schemas import InvoiceData
 from sqlalchemy import text
 from sqlalchemy.orm import selectinload
 from datetime import date
+from repository.repository_interface import RepositoryInterface
 
 
-
-class InvoiceRepository:
+class InvoiceRepository(RepositoryInterface):
     async def create(self, db: AsyncSession, invoice_data: InvoiceData):
         # invoice = Invoice(**invoice_data.model_dump())
         invoice = invoice_data.model_dump()

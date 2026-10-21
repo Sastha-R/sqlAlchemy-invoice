@@ -4,13 +4,13 @@ from exceptions.custom_exceptions import InvoiceAlreadyExistsError, InvoiceNotFo
 from repository.repository import InvoiceRepository
 from schemas.schemas import InvoiceCreate, InvoiceData, InvoicePatch
 from utilities.file_handler import (FileHandler,WARRANTY_FOLDER)
-
+from repository.repository_interface import RepositoryInterface
 
 
 
 class InvoiceService:
-    def __init__(self) -> None:
-        self.repository = InvoiceRepository()
+    def __init__(self , repository : RepositoryInterface) -> None:
+        self.repository = repository
         self.filehandler = FileHandler()
 
     async def create_invoice(self, db: AsyncSession, invoice: InvoiceCreate):
