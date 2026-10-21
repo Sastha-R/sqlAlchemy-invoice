@@ -17,64 +17,75 @@ CREATE TABLE invoices (
 );
 
 
+CREATE TABLE invoice_files (
+    id SERIAL PRIMARY KEY,
+    invoice_id INTEGER NOT NULL,
+    file_name VARCHAR(200) NOT NULL,
+    file_type VARCHAR(50) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
 
--- PROCEDURE: public.create_invoice(character varying, character varying, character varying, date, character varying, integer, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric)
+    CONSTRAINT fk_invoice_files
+        FOREIGN KEY (invoice_id)
+        REFERENCES invoices(id)
+        ON DELETE CASCADE
+);
 
--- DROP PROCEDURE IF EXISTS public.create_invoice(character varying, character varying, character varying, date, character varying, integer, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric);
-
-CREATE OR REPLACE PROCEDURE public.create_invoice(
-	IN p_invoice_number character varying,
-	IN p_customer_name character varying,
-	IN p_customer_email character varying,
-	IN p_invoice_date date,
-	IN p_product_name character varying,
-	IN p_quantity integer,
-	IN p_unit_price numeric,
-	IN p_discount_percentage numeric,
-	IN p_discount_amount numeric,
-	IN p_tax_percentage numeric,
-	IN p_tax_amount numeric,
-	IN p_subtotal numeric,
-	IN p_taxable_amount numeric,
-	IN p_total_amount numeric)
-LANGUAGE 'plpgsql'
-AS $BODY$
+CREATE OR REPLACE PROCEDURE create_invoice(
+     p_invoice_number VARCHAR,
+     p_customer_name VARCHAR,
+     p_customer_email VARCHAR,
+     p_invoice_date DATE,
+     p_product_name VARCHAR,
+     p_quantity INTEGER,
+     p_unit_price NUMERIC,
+     p_discount_percentage NUMERIC,
+     p_discount_amount NUMERIC,
+     p_tax_percentage NUMERIC,
+     p_tax_amount NUMERIC,
+     p_subtotal NUMERIC,
+     p_taxable_amount NUMERIC,
+     p_total_amount NUMERIC
+)
+LANGUAGE plpgsql
+AS $$
 BEGIN
-IF EXISTS (SELECT 1 FROM invoices WHERE invoice_number = p_invoice_number)
-THEN 
-RAISE EXCEPTION 'Number already exist';
-END IF; 
-INSERT INTO invoices(invoice_number  ,
-   customer_name,
-    customer_email,
-    invoice_date,
-    product_name,
-    quantity,
-    unit_price  ,
-    discount_percentage,
-    discount_amount,
-    tax_percentage,
-    tax_amount ,
-    subtotal,
-    taxable_amount,
-    total_amount)
-	VALUES(P_invoice_number,
-    P_customer_name ,
-    P_customer_email ,
-    P_invoice_date ,
-    P_product_name ,
-    P_quantity ,
-    P_unit_price,
-    P_discount_percentage ,
-    P_discount_amount ,
-    P_tax_percentage ,
-    P_tax_amount,
-    P_subtotal ,
-    P_taxable_amount ,
-    P_total_amount );
-	END;
-	
-$BODY$;
-ALTER PROCEDURE public.create_invoice(character varying, character varying, character varying, date, character varying, integer, numeric, numeric, numeric, numeric, numeric, numeric, numeric, numeric)
-    OWNER TO postgres;
+ IF EXISTS (SELECT 1
+    FROM invoices
+    WHERE invoice_number = p_invoice_number) 
+	THEN
+        RAISE EXCEPTION 'Invoice number already exists';
+    END IF;
+    INSERT INTO invoices (invoice_number,
+        customer_name,
+        customer_email,
+        invoice_date,
+        product_name,
+        quantity,
+        unit_price,
+        discount_percentage,
+        discount_amount,
+        tax_percentage,
+        tax_amount,
+        subtotal,
+        taxable_amount,
+        total_amount)
+    VALUES (
+        p_invoice_number,
+        p_customer_name,
+        p_customer_email,
+        p_invoice_date,
+        p_product_name,
+        p_quantity,
+        p_unit_price,
+        p_discount_percentage,
+        p_discount_amount,
+        p_tax_percentage,
+        p_discount_amount,
+        p_subtotal,
+        p_taxable_amount,
+        p_total_amount);
+END;
+$$;
+select * from invoices
+select * from invoice_files
 
