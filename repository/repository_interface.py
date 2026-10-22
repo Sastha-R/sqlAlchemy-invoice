@@ -12,11 +12,11 @@ class RepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    async def get_by_id(sself , db : AsyncSession , invoice_id : int):
+    async def get_by_id(self , db : AsyncSession , invoice_id : int):
         pass
 
     @abstractmethod
-    async def get_by_invoice_number(sself , db : AsyncSession , invoice_number : str):
+    async def get_by_invoice_number(self , db : AsyncSession , invoice_number : str):
         pass
 
     @abstractmethod
