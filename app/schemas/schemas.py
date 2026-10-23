@@ -1,6 +1,6 @@
 from datetime import date
 from decimal import Decimal
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class InvoiceCreate(BaseModel):
@@ -14,6 +14,7 @@ class InvoiceCreate(BaseModel):
 
 
 class InvoiceData(InvoiceCreate):
+    
     discount_percentage: Decimal = Field(ge=0, le=100)
     discount_amount: Decimal = Field(ge=0)
     tax_percentage: Decimal = Field(ge=0, le=100)
@@ -33,3 +34,44 @@ class InvoicePatch(BaseModel):
     unit_price: Decimal | None = Field(default=None, gt=0)
 
 
+
+class InvoiceFileResponse(BaseModel):
+    id: int
+    invoice_id: int
+    file_name: str
+    file_type: str
+    file_path: str
+    uploaded_date: date | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class InvoiceResponse(BaseModel):
+    id: int
+    invoice_number: str
+    customer_name: str
+    customer_email: str
+    invoice_date: date
+    product_name: str
+    quantity: int
+    unit_price: Decimal
+    discount_percentage: Decimal
+    discount_amount: Decimal
+    tax_percentage: Decimal
+    tax_amount: Decimal
+    subtotal: Decimal
+    taxable_amount: Decimal
+    total_amount: Decimal
+    files: list[InvoiceFileResponse]
+
+    model_config = ConfigDict(from_attributes=True)
+
+class CustomerSummaryResponse(BaseModel):
+    customer_name: str
+    total_amount: Decimal
+    no_of_invoices: int
+    no_of_invoice_files: int
+
+class RepeatCustomerResponse(BaseModel):
+    customer_name: str
+    invoice_count: int

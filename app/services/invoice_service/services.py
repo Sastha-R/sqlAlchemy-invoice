@@ -13,7 +13,11 @@ class InvoiceService(ServiceInterface):
         self.repository = repository
         self.filehandler = FileHandler()
 
-    async def create_invoice(self, db: AsyncSession, invoice: InvoiceCreate):
+    async def create_invoice(
+            self, 
+            db: AsyncSession, 
+            invoice: InvoiceCreate
+            ):
         existing_invoice = await self.repository.get_by_invoice_number(db, invoice.invoice_number)
         if existing_invoice:
             raise InvoiceAlreadyExistsError("Invoice number already exists")
@@ -21,16 +25,30 @@ class InvoiceService(ServiceInterface):
         invoice_data = self.build_invoice_data(invoice)
         return await self.repository.create(db, invoice_data)
 
-    async def get_invoices(self, db: AsyncSession, limit: int, offset: int):
+    async def get_invoices(
+        self, 
+        db: AsyncSession, 
+        limit: int, 
+        offset: int
+        ):
         return await self.repository.get_all(db, limit, offset)
 
-    async def get_invoice_by_id(self, db: AsyncSession, invoice_id: int):
+    async def get_invoice_by_id(
+        self, 
+        db: AsyncSession, 
+        invoice_id: int
+        ):
         invoice = await self.repository.get_by_id(db, invoice_id)
         if invoice is None:
             raise InvoiceNotFoundError("Invoice not found")
         return invoice
 
-    async def update_invoice(self, db: AsyncSession, invoice_id: int, invoice: InvoiceCreate):
+    async def update_invoice(
+        self, 
+        db: AsyncSession, 
+        invoice_id: int, 
+        invoice: InvoiceCreate
+        ):
 
         existing_invoice = await self.get_invoice_by_id(db, invoice_id)
         await self.check_invoice_number_available(db, invoice.invoice_number, invoice_id)
@@ -39,7 +57,12 @@ class InvoiceService(ServiceInterface):
 
 
 
-    async def patch_invoice(self, db: AsyncSession, invoice_id: int, invoice: InvoicePatch):
+    async def patch_invoice(
+            self, 
+            db: AsyncSession, 
+            invoice_id: int, 
+            invoice: InvoicePatch
+            ):
         existing_invoice = await self.get_invoice_by_id(db, invoice_id)   
         updated_data = {
             "invoice_number": existing_invoice.invoice_number,
@@ -62,7 +85,11 @@ class InvoiceService(ServiceInterface):
         invoice = await self.get_invoice_by_id(db, invoice_id)
         await self.repository.delete(db, invoice)
 
-    async def check_invoice_number_available(self, db: AsyncSession, invoice_number: str, current_invoice_id: int):
+    async def check_invoice_number_available(
+        self, db: AsyncSession, 
+        invoice_number: str, 
+        current_invoice_id: int
+        ):
         invoice = await self.repository.get_by_invoice_number(db, invoice_number)
         if invoice and invoice.id != current_invoice_id:
             raise InvoiceAlreadyExistsError("Invoice number already exists")
@@ -100,7 +127,11 @@ class InvoiceService(ServiceInterface):
             total_amount=total_amount,
         )
 
-    async def upload_warranty_document(self,db: AsyncSession,invoice_id: int,photo):
+    async def upload_warranty_document(
+        self,
+        db: AsyncSession,
+        invoice_id: int,photo
+        ):
 
         existing_invoice = await self.repository.get_by_id(db, invoice_id)
         if not existing_invoice:
@@ -110,7 +141,13 @@ class InvoiceService(ServiceInterface):
 
         file_name, file_path = await self.filehandler.save_file(photo,WARRANTY_FOLDER,extensions)
 
-        await self.repository.save_file_record(db=db,invoice_id=invoice_id,file_name=file_name,file_type="warranty_document",file_path=file_path)
+        await self.repository.save_file_record(
+            db=db,
+            invoice_id=invoice_id,
+            file_name=file_name,
+            file_type="warranty_document",
+            file_path=file_path
+            )
         return {
             "message": "Warranty file saved successfully",
             "invoice_id": invoice_id,

@@ -28,7 +28,15 @@ class RepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    async def save_file_record(self , db : AsyncSession , invoice_id : int , filename : str , file_type : str , filepath : str):
+    async def save_file_record(
+        self ,
+        db : AsyncSession ,
+        invoice_id : int , 
+        filename : str ,
+        file_type : str , 
+        filepath : str
+        ):
+
         pass
 
     @abstractmethod

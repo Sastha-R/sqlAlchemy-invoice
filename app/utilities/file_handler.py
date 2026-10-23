@@ -7,7 +7,12 @@ WARRANTY_FOLDER = Path("app/uploads/warranty docs")
 
 
 class FileHandler:
-    async def save_file(self , photo ,folder ,extensions):
+    async def save_file(
+        self , 
+        photo ,
+        folder ,
+        extensions
+        ):
         extension = Path(photo.filename).suffix.lower()
         if extension not in extensions:
             raise ValueError("Only PDF documents are allowed")

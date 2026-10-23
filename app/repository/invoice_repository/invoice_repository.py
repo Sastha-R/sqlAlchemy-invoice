@@ -32,6 +32,7 @@ class InvoiceRepository(RepositoryInterface):
             result = await db.execute(statement , invoice)
             await db.commit()
             return invoice
+            # return result.scalar_one()
         except SQLAlchemyError:
             await db.rollback()
             raise   
@@ -86,7 +87,14 @@ class InvoiceRepository(RepositoryInterface):
             await db.rollback()
             raise
 
-    async def save_file_record(self,db: AsyncSession,invoice_id: int,file_name: str,file_type: str,file_path: str):
+    async def save_file_record(
+        self,db: AsyncSession,
+        invoice_id: int,
+        file_name: str,
+        file_type: str,
+        file_path: str
+        ):
+
         invoice_file = InvoiceFile(
             invoice_id = invoice_id,
             file_name = file_name,
