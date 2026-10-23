@@ -1,0 +1,160 @@
+from sqlalchemy import select,func
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.models import Invoice,InvoiceFile
+from app.schemas.schemas import InvoiceData
+from sqlalchemy import text
+from sqlalchemy.orm import selectinload
+from datetime import date
+from app.repository.invoice_repository_interface.invoice_repository_interface import RepositoryInterface
+
+
+class InvoiceRepository(RepositoryInterface):
+    async def create(self, db: AsyncSession, invoice_data: InvoiceData):
+        # invoice = Invoice(**invoice_data.model_dump())
+        invoice = invoice_data.model_dump()
+        try:
+            statement = text("""call create_invoice(
+                            :invoice_number,
+                            :customer_name,
+                            :customer_email,
+                            :invoice_date,
+                            :product_name,
+                            :quantity,
+                            :unit_price,
+                            :discount_percentage,
+                            :discount_amount,
+                            :tax_percentage,
+                            :tax_amount,
+                            :subtotal,
+                            :taxable_amount,
+                            :total_amount)""")
+            result = await db.execute(statement , invoice)
+            await db.commit()
+            return invoice
+        except SQLAlchemyError:
+            await db.rollback()
+            raise   
+        # try:    
+        #     db.add(invoice)
+        #     await db.commit()
+        #     await db.refresh(invoice)
+        #     return invoice
+        
+        # except SQLAlchemyError:
+        #     await db.rollback()
+        #     raise
+
+    async def get_all(self, db: AsyncSession, limit: int, offset: int):
+        statement = (
+                      select(Invoice)
+                     .options(selectinload(Invoice.files))
+                     .order_by(Invoice.id)
+                     .limit(limit)
+                     .offset(offset))
+        
+        result = await db.execute(statement)
+        return list(result.scalars().all())
+
+    async def get_by_id(self, db: AsyncSession, invoice_id: int):
+        return await db.get(Invoice, invoice_id)
+
+    async def get_by_invoice_number(self, db: AsyncSession, invoice_number: str):
+        statement = select(Invoice).where(Invoice.invoice_number == invoice_number)
+        result = await db.execute(statement)
+        return result.scalar_one_or_none()
+
+    async def update(self, db: AsyncSession, invoice: Invoice, invoice_data: InvoiceData):
+        for field, value in invoice_data.model_dump().items():
+            setattr(invoice, field, value)
+
+        try:
+            await db.commit()
+            await db.refresh(invoice)
+            return invoice
+
+        
+        except SQLAlchemyError:
+            await db.rollback()
+            raise
+
+    async def delete(self, db: AsyncSession, invoice: Invoice):
+        try:
+            await db.delete(invoice)
+            await db.commit()
+        except SQLAlchemyError:
+            await db.rollback()
+            raise
+
+    async def save_file_record(self,db: AsyncSession,invoice_id: int,file_name: str,file_type: str,file_path: str):
+        invoice_file = InvoiceFile(
+            invoice_id = invoice_id,
+            file_name = file_name,
+            file_type = file_type,
+            file_path = file_path,
+            uploaded_date = date.today()
+        )
+
+        try:
+            db.add(invoice_file)
+            await db.commit()
+            await db.refresh(invoice_file)
+            return invoice_file
+
+        except SQLAlchemyError:
+            await db.rollback()
+            raise
+
+    
+    async def customer_summary(self,total : int , db: AsyncSession):
+
+        statement = (select(Invoice.customer_name,
+                            func.sum(Invoice.total_amount).label("Total Amount"),
+                            func.count().label("No Of Invoices"),
+                            func.count(InvoiceFile.id).label("No Of Invoice Files"))
+                            .outerjoin(InvoiceFile, Invoice.id == InvoiceFile.invoice_id)
+                            .group_by(Invoice.customer_name)
+                            .having(func.sum(Invoice.total_amount) > total)
+                            .order_by(func.sum(Invoice.total_amount)))     
+
+        result = await db.execute(statement)
+        result = result.mappings().all()            
+        return result
+
+
+    async def get_invoices_with_warranty(self, db: AsyncSession):
+        statement = (
+            select(Invoice)
+            .join(Invoice.files)
+            .distinct()
+            .order_by(Invoice.id)
+        )
+
+        result = await db.execute(statement)
+        return result.scalars().all()
+
+    async def get_invoices_without_warranty(self, db: AsyncSession):
+        statement = (
+            select(Invoice)
+            .outerjoin(Invoice.files)
+            .where(InvoiceFile.id.is_(None))
+            .order_by(Invoice.id)
+        )
+
+        result = await db.execute(statement)
+        return result.scalars().all()
+
+
+    async def get_repeat_customers(self, db: AsyncSession):
+        statement = (
+            select(
+                Invoice.customer_name,
+                func.count(Invoice.id).label("invoice_count")
+            )
+            .group_by(Invoice.customer_name)
+            .having(func.count(Invoice.id) > 1)
+            .order_by(Invoice.customer_name)
+        )
+
+        result = await db.execute(statement)
+        return result.mappings().all()

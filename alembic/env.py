@@ -4,9 +4,9 @@ from alembic import context
 
 
 import asyncio
-from database.base import Base
-from database.database import engine
-from models.models import InvoiceFile,Invoice
+from app.database.base import Base
+from app.database.database import engine
+from app.models.models import InvoiceFile,Invoice
 
 
 
